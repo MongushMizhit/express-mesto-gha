@@ -6,7 +6,7 @@ const getUsers = async (req, res) => {
     const users = await User.find();
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ error: 'Ошибка по умолчанию' });
+    res.status(500).json({ message: 'Ошибка по умолчанию' });
   }
 };
 
@@ -15,12 +15,12 @@ const getUserById = async (req, res) => {
   try {
     const user = await User.findById(userId);
     if (!user) {
-      res.status(404).json({ error: 'Пользователь не найден' });
+      res.status(404).json({ message: 'Пользователь не найден' });
       return;
     }
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ error: 'Ошибка по умолчанию' });
+    res.status(500).json({ message: 'Ошибка по умолчанию' });
   }
 };
 
@@ -30,7 +30,7 @@ const createUser = async (req, res) => {
     const user = await User.create({ name, about, avatar });
     res.status(201).json(user);
   } catch (error) {
-    res.status(400).json({ error: 'Переданы некорректные данные при создании пользователя' });
+    res.status(400).json({ message: 'Переданы некорректные данные при создании пользователя' });
   }
 };
 
@@ -46,13 +46,13 @@ const updateUser = async (req, res) => {
     );
 
     if (!updatedUser) {
-      res.status(404).json({ error: 'Пользователь с указанным _id не найден' });
+      res.status(404).json({ message: 'Пользователь с указанным _id не найден' });
       return;
     }
 
     res.status(200).json(updatedUser);
   } catch (error) {
-    res.status(500).json({ error: 'Ошибка по умолчанию' });
+    res.status(500).json({ message: 'Ошибка по умолчанию' });
   }
 };
 
@@ -68,13 +68,13 @@ const updateAvatar = async (req, res) => {
     );
 
     if (!updatedUser) {
-      res.status(404).json({ error: 'Пользователь с указанным _id не найден' });
+      res.status(404).json({ message: 'Пользователь с указанным _id не найден' });
       return;
     }
 
     res.status(200).json(updatedUser);
   } catch (error) {
-    res.status(500).json({ error: 'Ошибка по умолчанию' });
+    res.status(500).json({ message: 'Ошибка по умолчанию' });
   }
 };
 
