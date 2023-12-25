@@ -46,10 +46,18 @@ const deleteCard = (req, res) => {
     .catch((err) => handleErrorResponse(res, err.error, 500));
 };
 
+// eslint-disable-next-line consistent-return
 const likeCard = async (req, res) => {
+  const { cardId } = req.params;
+
+  // Проверка валидности ObjectId
+  if (!mongoose.Types.ObjectId.isValid(cardId)) {
+    return handleErrorResponse(res, 'Некорректный формат ID карточки', 400);
+  }
+
   try {
     const card = await Card.findByIdAndUpdate(
-      req.params.cardId,
+      cardId,
       { $addToSet: { likes: req.user._id } },
       { new: true },
     );
@@ -64,10 +72,18 @@ const likeCard = async (req, res) => {
   }
 };
 
+// eslint-disable-next-line consistent-return
 const dislikeCard = async (req, res) => {
+  const { cardId } = req.params;
+
+  // Проверка валидности ObjectId
+  if (!mongoose.Types.ObjectId.isValid(cardId)) {
+    return handleErrorResponse(res, 'Некорректный формат ID карточки', 400);
+  }
+
   try {
     const card = await Card.findByIdAndUpdate(
-      req.params.cardId,
+      cardId,
       { $pull: { likes: req.user._id } },
       { new: true },
     );
