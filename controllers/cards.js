@@ -1,4 +1,3 @@
-const { Types } = require('mongoose');
 const Card = require('../models/card');
 
 // eslint-disable-next-line max-len
@@ -26,21 +25,18 @@ const createCard = (req, res) => {
     });
 };
 
-const deleteCard = async (req, res) => {
+const deleteCard = (req, res) => {
   const { cardId } = req.params;
 
-  if (!Types.ObjectId.isValid(cardId)) {
-    return res.status(400).json({ message: 'Переданы некорректные данные при создании карточки' });
-  }
-
-  Card.findByIdAndRemove(cardId)
+  Card.findByIdAndDelete(cardId)
     .then((card) => {
       if (!card) {
-        return res.status(404).json({ message: 'Карточка не найдена' });
+        handleErrorResponse(res, 'Карточка не найдена', 404);
+      } else {
+        res.status(200).json(card);
       }
-      return res.status(200).json(card);
     })
-    .catch((err) => res.status(500).json({ message: err.message }));
+    .catch((err) => handleErrorResponse(res, err.error, 500));
 };
 
 const likeCard = async (req, res) => {
