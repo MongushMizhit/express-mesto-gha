@@ -1,12 +1,12 @@
 const Card = require('../models/card');
 
 // eslint-disable-next-line max-len
-const handleErrorResponse = (res, message, statusCode) => res.status(statusCode).json({ error: message });
+const handleErrorResponse = (res, error, statusCode) => res.status(statusCode).json({ message: error });
 
 const getCards = (req, res) => {
   Card.find({})
     .then((cards) => res.status(200).json(cards))
-    .catch((err) => handleErrorResponse(res, err.message, 500));
+    .catch((err) => handleErrorResponse(res, err.error, 500));
 };
 
 const createCard = (req, res) => {
@@ -20,7 +20,7 @@ const createCard = (req, res) => {
       if (err.name === 'ValidationError') {
         handleErrorResponse(res, 'Переданы некорректные данные в метод создания карточки', 400);
       } else {
-        handleErrorResponse(res, err.message, 500);
+        handleErrorResponse(res, err.error, 500);
       }
     });
 };
@@ -36,7 +36,7 @@ const deleteCard = (req, res) => {
         res.status(200).json(card);
       }
     })
-    .catch((err) => handleErrorResponse(res, err.message, 500));
+    .catch((err) => handleErrorResponse(res, err.error, 500));
 };
 
 const likeCard = async (req, res) => {

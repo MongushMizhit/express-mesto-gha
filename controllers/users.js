@@ -1,4 +1,4 @@
-// controllers/users.js
+const { Types } = require('mongoose');
 const User = require('../models/user');
 
 const getUsers = async (req, res) => {
@@ -10,13 +10,19 @@ const getUsers = async (req, res) => {
   }
 };
 
+// eslint-disable-next-line consistent-return
 const getUserById = async (req, res) => {
   const { userId } = req.params;
+
+  // Проверка формата ObjectId
+  if (!Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ message: 'Передан некорректный идентификатор пользователя' });
+  }
+
   try {
     const user = await User.findById(userId);
     if (!user) {
-      res.status(404).json({ message: 'Пользователь не найден' });
-      return;
+      return res.status(404).json({ message: 'Пользователь не найден' });
     }
     res.status(200).json(user);
   } catch (error) {
@@ -34,11 +40,21 @@ const createUser = async (req, res) => {
   }
 };
 
+// eslint-disable-next-line consistent-return
 const updateUser = async (req, res) => {
   const { name, about } = req.body;
   const userId = req.user._id;
 
   try {
+    // Дополнительная проверка длины полей name и about
+    if (name && (name.length < 2 || name.length > 30)) {
+      return res.status(400).json({ message: 'Переданы некорректные данные при обновлении профиля' });
+    }
+
+    if (about && (about.length < 2 || about.length > 30)) {
+      return res.status(400).json({ message: 'Переданы некорректные данные при обновлении профиля' });
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { name, about },
@@ -46,8 +62,7 @@ const updateUser = async (req, res) => {
     );
 
     if (!updatedUser) {
-      res.status(404).json({ message: 'Пользователь с указанным _id не найден' });
-      return;
+      return res.status(404).json({ message: 'Пользователь с указанным _id не найден' });
     }
 
     res.status(200).json(updatedUser);
