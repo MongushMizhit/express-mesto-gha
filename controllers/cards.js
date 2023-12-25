@@ -26,7 +26,6 @@ const createCard = (req, res) => {
     });
 };
 
-// eslint-disable-next-line consistent-return
 const deleteCard = async (req, res) => {
   const { cardId } = req.params;
 
