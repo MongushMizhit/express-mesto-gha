@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const { Types } = require('mongoose');
 const Card = require('../models/card');
 
 // eslint-disable-next-line max-len
@@ -30,7 +30,7 @@ const createCard = (req, res) => {
 const deleteCard = async (req, res) => {
   const { cardId } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(cardId)) {
+  if (!Types.ObjectId.isValid(cardId)) {
     return res.status(400).json({ message: 'Переданы некорректные данные при создании карточки' });
   }
 
