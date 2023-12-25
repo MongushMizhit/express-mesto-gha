@@ -14,7 +14,6 @@ const getUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   const { userId } = req.params;
 
-  // Проверка формата ObjectId
   if (!Types.ObjectId.isValid(userId)) {
     return res.status(400).json({ message: 'Передан некорректный идентификатор пользователя' });
   }
@@ -46,7 +45,6 @@ const updateUser = async (req, res) => {
   const userId = req.user._id;
 
   try {
-    // Дополнительная проверка длины полей name и about
     if (name && (name.length < 2 || name.length > 30)) {
       return res.status(400).json({ message: 'Переданы некорректные данные при обновлении профиля' });
     }

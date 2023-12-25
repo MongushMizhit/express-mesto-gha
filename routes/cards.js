@@ -1,4 +1,3 @@
-// routes/cards.js
 const express = require('express');
 const { getCards, createCard, deleteCard } = require('../controllers/cards');
 const { likeCard, dislikeCard } = require('../controllers/cards');
