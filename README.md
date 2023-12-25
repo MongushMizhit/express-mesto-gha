@@ -17,4 +17,4 @@
 
 ## Сайт
 
-* [Ссылка на сайт в GitHub](https://github.com/MongushMizhit/express-mesto-gha.git)
+* [Ссылка на сайт в GitHub](https://github.com/MongushMizhit/express-mesto-gha)
