@@ -35,7 +35,11 @@ const createUser = async (req, res) => {
     const user = await User.create({ name, about, avatar });
     res.status(201).json(user);
   } catch (error) {
-    res.status(400).json({ message: 'Переданы некорректные данные при создании пользователя' });
+    if (error.name === 'ValidationError') {
+      res.status(400).json({ message: 'Переданы некорректные данные при создании пользователя' });
+    } else {
+      res.status(500).json({ message: 'Ошибка по умолчанию' });
+    }
   }
 };
 
@@ -45,18 +49,10 @@ const updateUser = async (req, res) => {
   const userId = req.user._id;
 
   try {
-    if (name && (name.length < 2 || name.length > 30)) {
-      return res.status(400).json({ message: 'Переданы некорректные данные при обновлении профиля' });
-    }
-
-    if (about && (about.length < 2 || about.length > 30)) {
-      return res.status(400).json({ message: 'Переданы некорректные данные при обновлении профиля' });
-    }
-
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { name, about },
-      { new: true },
+      { new: true, runValidators: true },
     );
 
     if (!updatedUser) {
@@ -65,7 +61,11 @@ const updateUser = async (req, res) => {
 
     res.status(200).json(updatedUser);
   } catch (error) {
-    res.status(500).json({ message: 'Ошибка по умолчанию' });
+    if (error.name === 'ValidationError') {
+      res.status(400).json({ message: 'Переданы некорректные данные при обновлении профиля' });
+    } else {
+      res.status(500).json({ message: 'Ошибка по умолчанию' });
+    }
   }
 };
 
