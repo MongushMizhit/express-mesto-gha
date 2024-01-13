@@ -35,13 +35,27 @@ const deleteCard = (req, res) => {
     return handleErrorResponse(res, 'Переданы некорректные данные при создании карточки', 400);
   }
 
-  Card.findByIdAndDelete(cardId)
+  Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        handleErrorResponse(res, 'Карточка не найдена', 404);
-      } else {
-        res.status(200).json(card);
+        return handleErrorResponse(res, 'Карточка не найдена', 404);
       }
+
+      // Проверяем, является ли текущий пользователь владельцем карточки
+      if (card.owner.toString() !== req.user._id) {
+        return handleErrorResponse(res, 'У вас нет прав на удаление этой карточки', 403);
+      }
+
+      // Пользователь имеет право на удаление карточки, продолжаем
+      return Card.findByIdAndDelete(cardId);
+    })
+    // eslint-disable-next-line consistent-return
+    .then((deletedCard) => {
+      if (!deletedCard) {
+        return handleErrorResponse(res, 'Карточка не найдена', 404);
+      }
+
+      res.status(200).json(deletedCard);
     })
     .catch((err) => handleErrorResponse(res, err.error, 500));
 };
