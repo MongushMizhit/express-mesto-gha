@@ -36,9 +36,9 @@ const getUserById = async (req, res) => {
 // eslint-disable-next-line consistent-return
 const createUser = async (req, res) => {
   const {
-    name = 'Жак-Ив Кусто',
-    about = 'Исследователь',
-    avatar = 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    name,
+    about,
+    avatar,
     email,
     password,
   } = req.body || {};
