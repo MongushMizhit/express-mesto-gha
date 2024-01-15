@@ -126,6 +126,11 @@ const updateAvatar = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
 
+  // Проверка, существует ли email и является ли он строкой
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ message: 'Некорректный формат email' });
+  }
+
   // Валидация формата email
   if (!validator.isEmail(email)) {
     return res.status(400).json({ message: 'Некорректный формат email' });
