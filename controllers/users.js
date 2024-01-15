@@ -36,8 +36,17 @@ const getUserById = async (req, res) => {
 // eslint-disable-next-line consistent-return
 const createUser = async (req, res) => {
   const {
-    name = 'Жак-Ив Кусто', about = 'Исследователь', avatar = 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png', email, password,
-  } = req.body;
+    name = 'Жак-Ив Кусто',
+    about = 'Исследователь',
+    avatar = 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    email,
+    password,
+  } = req.body || {};
+
+  // Проверка наличия email и password в теле запроса
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Отсутствует email или password в теле запроса' });
+  }
 
   // Валидация формата email
   if (!validator.isEmail(email)) {
@@ -51,6 +60,8 @@ const createUser = async (req, res) => {
     const user = await User.create({
       name, about, avatar, email, password: hashedPassword,
     });
+
+    // Отправка созданного пользователя в ответе
     res.status(201).json(user);
   } catch (error) {
     // Обработка конкретных ошибок валидации
@@ -113,7 +124,7 @@ const updateAvatar = async (req, res) => {
 
 // eslint-disable-next-line consistent-return
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body || {};
 
   // Валидация формата email
   if (!validator.isEmail(email)) {
