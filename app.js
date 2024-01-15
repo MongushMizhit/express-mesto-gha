@@ -13,10 +13,11 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
   useUnifiedTopology: true,
 });
 
+app.use(express.json());
+
 app.post('/signin', login);
 app.post('/signup', createUser);
 
-app.use(express.json());
 app.use('/users', usersRouter);
 app.use('/cards', cardsRouter);
 app.use((req, res) => {

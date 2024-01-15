@@ -124,7 +124,7 @@ const updateAvatar = async (req, res) => {
 
 // eslint-disable-next-line consistent-return
 const login = async (req, res) => {
-  const { email, password } = req.body || {};
+  const { email, password } = req.body;
 
   // Валидация формата email
   if (!validator.isEmail(email)) {
