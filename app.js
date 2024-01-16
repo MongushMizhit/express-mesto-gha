@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { celebrate, Joi } = require('celebrate');
+const { celebrate, Joi, errors } = require('celebrate');
 const usersRouter = require('./routes/users');
 const cardsRouter = require('./routes/cards');
 const { login } = require('./controllers/users');
@@ -39,6 +39,8 @@ app.use('/cards', cardsRouter);
 app.use('*', (req, res, next) => {
   next(new NotFoundError('Страница не найдена'));
 });
+
+app.use(errors());
 
 // Обработчик ошибок
 // eslint-disable-next-line no-unused-vars

@@ -4,6 +4,9 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
 const User = require('../models/user');
+const BadRequestError = require('../errors/bad-request-err');
+const NotFoundError = require('../errors/not-found-err');
+const UnauthorizedError = require('../errors/unauthorized-err');
 
 const getUsers = async (req, res) => {
   try {
@@ -31,6 +34,24 @@ const getUserById = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Ошибка по умолчанию' });
   }
+};
+
+const getCurrentUser = async (req, res, next) => {
+  const userId = req.user._id;
+  User.findById(userId)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь не найден');
+      }
+      res.status(200).json(user);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Передан некорректный _id пользователя'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 // eslint-disable-next-line consistent-return
@@ -74,107 +95,72 @@ const createUser = async (req, res) => {
   }
 };
 
-// eslint-disable-next-line consistent-return
-const updateUser = async (req, res) => {
+const updateUser = (req, res, next) => {
   const { name, about } = req.body;
   const userId = req.user._id;
 
-  try {
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { name, about },
-      { new: true, runValidators: true },
-    );
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'Пользователь с указанным _id не найден' });
-    }
-
-    res.status(200).json(updatedUser);
-  } catch (error) {
-    if (error.name === 'ValidationError') {
-      res.status(400).json({ message: 'Переданы некорректные данные при обновлении профиля' });
-    } else {
-      res.status(500).json({ message: 'Ошибка по умолчанию' });
-    }
-  }
+  User.findByIdAndUpdate(userId, { name, about }, { new: true, runValidators: true })
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь с указанным _id не найден');
+      }
+      res.status(200).json(user);
+    })
+    .catch((err) => {
+      if (err.name === 'DocumentNotFoundError') {
+        next(new NotFoundError('Пользователь с указанным _id не найден'));
+      } else if (err.name === 'CastError') {
+        next(new BadRequestError('Переданы некорректные данные при обновлении профиля'));
+      } else if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные при обновлении профиля'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-const updateAvatar = async (req, res) => {
+const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
-  const userId = req.user._id;
 
-  try {
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { avatar },
-      { new: true },
-    );
-
-    if (!updatedUser) {
-      res.status(404).json({ message: 'Пользователь с указанным _id не найден' });
-      return;
-    }
-
-    res.status(200).json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ message: 'Ошибка по умолчанию' });
-  }
+  User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
+    .then((result) => {
+      if (!result) {
+        throw new NotFoundError('Пользователь по указанному _id не найден.');
+      }
+      res.status(200).json(result);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные при обновлении аватара.'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-// eslint-disable-next-line consistent-return
-const login = async (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
 
-  // Проверка, существует ли email и является ли он строкой
-  if (!email || typeof email !== 'string') {
-    return res.status(400).json({ message: 'Некорректный формат email' });
-  }
+  User.findOne({ email }).select('+password')
+    .then((user) => {
+      if (!user) {
+        throw new UnauthorizedError('Неправильные почта или пароль');
+      }
 
-  // Валидация формата email
-  if (!validator.isEmail(email)) {
-    return res.status(400).json({ message: 'Некорректный формат email' });
-  }
+      return bcrypt.compare(password, user.password);
+    })
+    .then((matched) => {
+      if (!matched) {
+        throw new UnauthorizedError('Неправильные почта или пароль');
+      }
 
-  try {
-    // Поиск пользователя по email в базе данных
-    const user = await User.findOne({ email }).select('+password');
-
-    // Проверка, найден ли пользователь и соответствует ли пароль
-    if (!user || !await bcrypt.compare(password, user.password)) {
-      return res.status(401).json({ message: 'Неправильные почта или пароль' });
-    }
-
-    // Создание JWT токена
-    const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '7d' });
-
-    // Отправка токена в куке
-    res.cookie('jwt', token, {
-      maxAge: 7 * 24 * 60 * 60 * 1000, // Неделя в миллисекундах
-      httpOnly: true,
+      // eslint-disable-next-line no-undef
+      const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '7d' });
+      res.send({ JWT: token });
+    })
+    .catch((err) => {
+      next(err);
     });
-
-    // Отправка ответа
-    res.status(200).json({ message: 'Вход успешно выполнен' });
-  } catch (error) {
-    // Обработка других ошибок
-    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
-  }
-};
-
-const getCurrentUser = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
-    }
-
-    return res.status(200).json(user);
-  } catch (error) {
-    return res.status(500).json({ message: 'Внутренняя ошибка сервера' });
-  }
 };
 
 module.exports = {
