@@ -6,6 +6,7 @@ const cardsRouter = require('./routes/cards');
 const { login } = require('./controllers/users');
 const { createUser } = require('./controllers/users');
 const NotFoundError = require('./errors/not-found-err');
+const { URL_EXP } = require('./constants/constants');
 
 const app = express();
 const PORT = 3000;
@@ -27,7 +28,7 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string(),
+    avatar: Joi.string().pattern(URL_EXP),
     email: Joi.string().required().email(),
     password: Joi.string().required(),
   }),

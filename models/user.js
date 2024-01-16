@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const { URL_EXP } = require('../constants/constants');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -34,6 +35,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    validate: {
+      validator: (url) => URL_EXP.test(url),
+      message: 'Invalid link',
+    },
   },
 }, { versionKey: false });
 
