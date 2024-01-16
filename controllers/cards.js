@@ -1,16 +1,17 @@
-const mongoose = require('mongoose');
 const Card = require('../models/card');
+const BadRequestError = require('../errors/bad-request-err');
+const ForbiddenError = require('../errors/forbidden-err');
+const NotFoundError = require('../errors/not-found-err');
 
-// eslint-disable-next-line max-len
-const handleErrorResponse = (res, error, statusCode) => res.status(statusCode).json({ message: error });
-
-const getCards = (req, res) => {
+const getCards = (req, res, next) => {
   Card.find({})
-    .then((cards) => res.status(200).json(cards))
-    .catch((err) => handleErrorResponse(res, err.error, 500));
+    .then((cards) => res.send(cards))
+    .catch((err) => {
+      next((err));
+    });
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
 
   const ownerId = req.user._id;
@@ -19,97 +20,80 @@ const createCard = (req, res) => {
     .then((card) => res.status(201).json(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        handleErrorResponse(res, 'Переданы некорректные данные в метод создания карточки', 400);
+        next(new BadRequestError('Переданы некорректные данные при создании карточки'));
       } else {
-        handleErrorResponse(res, err.error, 500);
+        next(err);
       }
     });
 };
 
-// eslint-disable-next-line consistent-return
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
-
-  // Проверка валидности ObjectId
-  if (!mongoose.Types.ObjectId.isValid(cardId)) {
-    return handleErrorResponse(res, 'Переданы некорректные данные при создании карточки', 400);
-  }
+  const userId = req.user._id;
 
   Card.findById(cardId)
+    .orFail()
     .then((card) => {
-      if (!card) {
-        return handleErrorResponse(res, 'Карточка не найдена', 404);
-      }
+      const ownerId = card.owner._id.toString();
 
-      // Проверяем, является ли текущий пользователь владельцем карточки
-      if (card.owner.toString() !== req.user._id) {
-        return handleErrorResponse(res, 'У вас нет прав на удаление этой карточки', 403);
+      if (userId === ownerId) {
+        return Card.findByIdAndRemove(cardId)
+          .orFail();
       }
-
-      // Пользователь имеет право на удаление карточки, продолжаем
-      return Card.findByIdAndDelete(cardId);
+      throw new ForbiddenError('Нет прав для удаления этой карточки');
     })
-    // eslint-disable-next-line consistent-return
-    .then((deletedCard) => {
-      if (!deletedCard) {
-        return handleErrorResponse(res, 'Карточка не найдена', 404);
-      }
-
-      res.status(200).json(deletedCard);
+    .then(() => {
+      res.send({ message: 'Карточка успешно удалена' });
     })
-    .catch((err) => handleErrorResponse(res, err.error, 500));
+    .catch((err) => {
+      if (err.name === 'NotFoundError') {
+        next(new NotFoundError('Карточка с указанным _id не найдена'));
+      } else if (err.name === 'CastError') {
+        next(new BadRequestError('Некорректные данные _id'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-// eslint-disable-next-line consistent-return
-const likeCard = async (req, res) => {
+const likeCard = (req, res, next) => {
+  const userId = req.user._id;
   const { cardId } = req.params;
 
-  // Проверка валидности ObjectId
-  if (!mongoose.Types.ObjectId.isValid(cardId)) {
-    return handleErrorResponse(res, 'Некорректный формат ID карточки', 400);
-  }
-
-  try {
-    const card = await Card.findByIdAndUpdate(
-      cardId,
-      { $addToSet: { likes: req.user._id } },
-      { new: true },
-    );
-
-    if (!card) {
-      handleErrorResponse(res, 'Карточка не найдена', 404);
-    } else {
-      res.status(200).json(card);
-    }
-  } catch (error) {
-    handleErrorResponse(res, 'Ошибка на стороне сервера', 500);
-  }
+  Card.findByIdAndUpdate(cardId, { $addToSet: { likes: userId } }, { new: true })
+    .orFail()
+    .then((card) => {
+      res.send({ data: card });
+    })
+    .catch((err) => {
+      if (err.name === 'NotFoundError') {
+        next(new NotFoundError('Передан несуществующий _id карточки'));
+      } else if (err.name === 'CastError') {
+        next(new BadRequestError('Переданы некорректные данные для постановки/снятии лайка'));
+      } else {
+        next(err);
+      }
+    });
 };
 
-// eslint-disable-next-line consistent-return
-const dislikeCard = async (req, res) => {
+const dislikeCard = (req, res, next) => {
+  const userId = req.user._id;
   const { cardId } = req.params;
 
-  // Проверка валидности ObjectId
-  if (!mongoose.Types.ObjectId.isValid(cardId)) {
-    return handleErrorResponse(res, 'Некорректный формат ID карточки', 400);
-  }
-
-  try {
-    const card = await Card.findByIdAndUpdate(
-      cardId,
-      { $pull: { likes: req.user._id } },
-      { new: true },
-    );
-
-    if (!card) {
-      handleErrorResponse(res, 'Карточка не найдена', 404);
-    } else {
-      res.status(200).json(card);
-    }
-  } catch (error) {
-    handleErrorResponse(res, 'Ошибка на стороне сервера', 500);
-  }
+  Card.findByIdAndUpdate(cardId, { $pull: { likes: userId } }, { new: true })
+    .orFail()
+    .then((card) => {
+      res.send({ data: card });
+    })
+    .catch((err) => {
+      if (err.name === 'NotFoundError') {
+        next(new NotFoundError('Передан несуществующий _id карточки'));
+      } else if (err.name === 'CastError') {
+        next(new BadRequestError('Переданы некорректные данные для постановки/снятии лайка'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports = {
