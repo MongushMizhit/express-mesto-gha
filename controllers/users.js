@@ -43,7 +43,7 @@ const getUserById = (req, res, next) => {
       res.send({ data: user });
     })
     .catch((err) => {
-      if (err.name === 'NotFoundError') {
+      if (err.name === 'DocumentNotFoundError') {
         next(new NotFoundError('Передан несуществующий _id пользователя'));
       } else if (err.name === 'CastError') {
         next(new BadRequestError('Передан некорректный _id пользователя'));
