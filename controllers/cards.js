@@ -35,22 +35,21 @@ const deleteCard = (req, res, next) => {
     .orFail()
     .then((card) => {
       const ownerId = card.owner._id.toString();
+
       if (userId === ownerId) {
-        Card.findByIdAndRemove(cardId)
-          .orFail()
-          .then(() => {
-            res.send({ message: 'Карточка успешно удалена' });
-          })
-          .catch(next);
-      } else {
-        next(new ForbiddenError('Нет доступа для удаления этой карточки'));
+        return Card.findByIdAndRemove(cardId)
+          .orFail();
       }
+      throw new ForbiddenError('Нет прав для удаления этой карточки');
+    })
+    .then((card) => {
+      res.send({ data: card });
     })
     .catch((err) => {
       if (err.name === 'DocumentNotFoundError') {
-        next(new NotFoundError('Недействительный _id карточки'));
+        next(new NotFoundError('Карточка с указанным _id не найдена'));
       } else if (err.name === 'CastError') {
-        next(new BadRequestError('Некорректный _id'));
+        next(new BadRequestError('Некорректные данные _id'));
       } else {
         next(err);
       }
