@@ -145,8 +145,7 @@ const login = (req, res, next) => {
         throw new UnauthorizedError('Неправильные почта или пароль');
       }
 
-      // eslint-disable-next-line no-undef
-      const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '7d' });
+      const token = jwt.sign({ _id: User._id }, 'your-secret-key', { expiresIn: '7d' });
       res.send({ JWT: token });
     })
     .catch((err) => {
