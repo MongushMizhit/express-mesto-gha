@@ -37,7 +37,7 @@ const deleteCard = (req, res, next) => {
       const ownerId = card.owner._id.toString();
 
       if (userId === ownerId) {
-        return Card.findByIdAndRemove(cardId)
+        return Card.findByIdAndDelete(cardId)
           .orFail();
       }
       throw new ForbiddenError('Нет прав для удаления этой карточки');
