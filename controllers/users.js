@@ -16,6 +16,24 @@ const getUsers = (req, res, next) => {
     });
 };
 
+const getCurrentUser = (req, res, next) => {
+  const userId = req.user._id;
+  User.findById(userId)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь не найден');
+      }
+      res.status(200).json(user);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Передан некорректный _id пользователя'));
+      } else {
+        next(err);
+      }
+    });
+};
+
 const getUserById = (req, res, next) => {
   const { userId } = req.params;
 
@@ -28,24 +46,6 @@ const getUserById = (req, res, next) => {
       if (err.name === 'NotFoundError') {
         next(new NotFoundError('Передан несуществующий _id пользователя'));
       } else if (err.name === 'CastError') {
-        next(new BadRequestError('Передан некорректный _id пользователя'));
-      } else {
-        next(err);
-      }
-    });
-};
-
-const getCurrentUser = (req, res, next) => {
-  const userId = req.user._id;
-  User.findById(userId)
-    .then((user) => {
-      if (!user) {
-        throw new NotFoundError('Пользователь не найден');
-      }
-      res.status(200).json(user);
-    })
-    .catch((err) => {
-      if (err.name === 'CastError') {
         next(new BadRequestError('Передан некорректный _id пользователя'));
       } else {
         next(err);
@@ -138,15 +138,21 @@ const login = (req, res, next) => {
         throw new UnauthorizedError('Неправильные почта или пароль');
       }
 
-      return bcrypt.compare(password, user.password);
-    })
-    .then((matched) => {
-      if (!matched) {
-        throw new UnauthorizedError('Неправильные почта или пароль');
-      }
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            throw new UnauthorizedError('Неправильные почта или пароль');
+          }
 
-      const token = jwt.sign({ _id: User._id }, 'your-secret-key', { expiresIn: '7d' });
-      res.send({ JWT: token });
+          const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '7d' });
+
+          res.cookie('jwt', token, {
+            maxAge: 7 * 24 * 60 * 60 * 1000, // Неделя в миллисекундах
+            httpOnly: true,
+          });
+
+          res.status(200).json({ message: 'Вход успешно выполнен' });
+        });
     })
     .catch((err) => {
       next(err);

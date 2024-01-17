@@ -1,4 +1,3 @@
-/* eslint-disable import/no-unresolved */
 const jwt = require('jsonwebtoken');
 const UnauthorizedError = require('../errors/unauthorized-err');
 
@@ -11,6 +10,7 @@ const auth = (req, res, next) => {
   }
 
   const token = authorization.replace('Bearer ', '');
+
   let payload;
 
   try {
