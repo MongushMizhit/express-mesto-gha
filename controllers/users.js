@@ -130,26 +130,22 @@ const updateAvatar = (req, res, next) => {
 };
 
 const login = (req, res, next) => {
-  const {
-    email,
-    password,
-  } = req.body;
+  const { email, password } = req.body;
 
   User.findOne({ email }).select('+password')
     // eslint-disable-next-line consistent-return
     .then((user) => {
       if (!user) {
-        return next(new UnauthorizedError('Неправильные почта или пароль'));
+        return next(new UnauthorizedError('Некорректные email или password'));
       }
 
       bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            return next(new UnauthorizedError('Неправильные почта или пароль'));
+            return next(new UnauthorizedError('Некорректные email или password'));
           }
 
-          const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '7d' }); // HARDCODE SECRET_KEY
-          // eslint-disable-next-line consistent-return
+          const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '7d' });
           return res.send({ JWT: token });
         });
     })
