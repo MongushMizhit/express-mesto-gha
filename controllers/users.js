@@ -130,32 +130,31 @@ const updateAvatar = (req, res, next) => {
 };
 
 const login = (req, res, next) => {
-  const { email, password } = req.body;
+  const {
+    email,
+    password,
+  } = req.body;
 
   User.findOne({ email }).select('+password')
+    // eslint-disable-next-line consistent-return
     .then((user) => {
       if (!user) {
-        throw new UnauthorizedError('Неправильные почта или пароль');
+        return next(new UnauthorizedError('Неправильные почта или пароль'));
       }
 
-      return bcrypt.compare(password, user.password)
+      bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            throw new UnauthorizedError('Неправильные почта или пароль');
+            return next(new UnauthorizedError('Неправильные почта или пароль'));
           }
 
-          const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '7d' });
-
-          res.cookie('jwt', token, {
-            maxAge: 7 * 24 * 60 * 60 * 1000, // Неделя в миллисекундах
-            httpOnly: true,
-          });
-
-          res.status(200).json({ message: 'Вход успешно выполнен' });
+          const token = jwt.sign({ _id: user._id }, 'your-secret-key', { expiresIn: '7d' }); // HARDCODE SECRET_KEY
+          // eslint-disable-next-line consistent-return
+          return res.send({ JWT: token });
         });
     })
     .catch((err) => {
-      next(err);
+      next((err));
     });
 };
 
