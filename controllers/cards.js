@@ -46,7 +46,7 @@ const deleteCard = (req, res, next) => {
       res.send({ message: 'Карточка успешно удалена' });
     })
     .catch((err) => {
-      if (err.name === 'NotFoundError') {
+      if (err.name === 'DocumentNotFoundError') {
         next(new NotFoundError('Карточка с указанным _id не найдена'));
       } else if (err.name === 'CastError') {
         next(new BadRequestError('Некорректные данные _id'));
@@ -66,7 +66,7 @@ const likeCard = (req, res, next) => {
       res.send({ data: card });
     })
     .catch((err) => {
-      if (err.name === 'NotFoundError') {
+      if (err.name === 'DocumentNotFoundError') {
         next(new NotFoundError('Передан несуществующий _id карточки'));
       } else if (err.name === 'CastError') {
         next(new BadRequestError('Переданы некорректные данные для постановки/снятии лайка'));
@@ -86,7 +86,7 @@ const dislikeCard = (req, res, next) => {
       res.send({ data: card });
     })
     .catch((err) => {
-      if (err.name === 'NotFoundError') {
+      if (err.name === 'DocumentNotFoundError') {
         next(new NotFoundError('Передан несуществующий _id карточки'));
       } else if (err.name === 'CastError') {
         next(new BadRequestError('Переданы некорректные данные для постановки/снятии лайка'));
